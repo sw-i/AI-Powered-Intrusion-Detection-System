@@ -1,0 +1,12 @@
+{
+    "detection_sensitivity": "medium",
+    "notification_level": "warning",
+    "auto_reset": true,
+    "max_packets": 1000,
+    "max_alerts": 50,
+    "ui_theme": "light",
+    "chart_refresh": 2000,
+    "save_attack_data": true,
+    "collect_stats": true,
+    "enable_geoip": true
+}
