@@ -30,7 +30,7 @@ This project is an AI-powered Intrusion Detection System (IDS) with a modern, Fl
 │   ├── threats.html        # Threats management template
 │   └── settings.html       # System settings template
 ├── scripts/                # Backend scripts
-│   ├── dashboard.py        # Backend dashboard functionality
+│   ├── train_model.py        # Backend dashboard functionality
 │   ├── enhanced_model.py   # AI model for threat detection
 │   └── ...                 # Other backend scripts
 ├── data/                   # Data storage directory
