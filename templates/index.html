@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AI-Powered IDS Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3ac47d;
+            --danger-color: #f64e60;
+            --warning-color: #ff9800;
+            --dark-color: #2b2f3a;
+            --light-color: #f8f9fc;
+            --accent-color: #8075ff;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition-speed: 0.3s;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                'Helvetica Neue', Arial, sans-serif;
+            transition: all var(--transition-speed);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            box-sizing: border-box;
+        }
+        
+        /* Fixed container */
+        .container, 
+        .container-fluid, 
+        .container-sm, 
+        .container-md, 
+        .container-lg, 
+        .container-xl {
+            width: 100%;
+            max-width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+            overflow-x: hidden;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: var(--card-shadow);
+            z-index: 1001;
+            width: 100%;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #224abe 100%);
+            box-shadow: var(--card-shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            transition: all var(--transition-speed);
+            z-index: 1000;
+            padding-top: 20px;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .content {
+                margin-left: 0 !important;
+                padding: 20px 15px !important;
+                width: 100% !important;
+            }
+            
+            .sidebar-toggle {
+                display: block !important;
+            }
+            
+            /* Fix for small devices */
+            .stat-card h2 {
+                font-size: 1.8rem !important;
+            }
+            
+            /* Improve row spacing on mobile */
+            .row {
+                margin-left: -10px;
+                margin-right: -10px;
+            }
+            
+            .row > [class*='col-'] {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+        
+        .sidebar-brand {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+            margin-top: 20px;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-menu a {
+            display: block;
+            padding: 12px 25px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all var(--transition-speed);
+            font-weight: 600;
+            border-radius: 0 30px 30px 0;
+            margin-right: 20px;
+        }
+        
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.15);
+            padding-left: 30px;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+        
+        .content {
+            margin-left: 280px;
+            padding: 25px 30px;
+            width: calc(100% - 280px);
+            box-sizing: border-box;
+            min-height: calc(100vh - 30px);
+            position: relative;
+            transition: all var(--transition-speed);
+            overflow-x: hidden;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 25px;
+            transition: all var(--transition-speed);
+            overflow: visible;
+            background-color: white;
+            height: auto;
+            min-height: 100px;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 20px 25px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-header i {
+            margin-right: 12px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        
+        .card-body {
+            padding: 25px;
+            overflow-y: visible;
+        }
+        
+        .stat-card {
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            border-left: none;
+            padding: 0;
+        }
+        
+        .stat-card.primary {
+            background: linear-gradient(45deg, var(--primary-color), #6282fb);
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(45deg, var(--secondary-color), #64e0ac);
+        }
+        
+        .stat-card.danger {
+            background: linear-gradient(45deg, var(--danger-color), #ff8087);
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(45deg, var(--warning-color), #ffbb57);
+        }
+        
+        .stat-card .card-body {
+            padding: 25px;
+            color: white;
+            position: relative;
+            z-index: 5;
+        }
+        
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 40%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            clip-path: polygon(100% 0, 0% 100%, 100% 100%);
+        }
+        
+        .stat-card h5 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0;
+            color: white;
+        }
+        
+        .stat-card i.stat-icon {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 3rem;
+            opacity: 0.2;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            border: none;
+            box-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.05);
+        }
+        
+        .alert-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .alert-text {
+            margin-bottom: 0;
+            font-size: 0.85rem;
+            color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .btn {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-success {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .monitoring-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .btn-monitor {
+            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all var(--transition-speed);
+            min-width: 160px;
+            text-align: center;
+        }
+        
+        .btn-monitor:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-monitor i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+        
+        #worldMap {
+            height: 300px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 10px;
+            min-height: 200px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            background-color: rgba(246, 78, 96, 0.1);
+            border-radius: 30px;
+            color: var(--danger-color);
+            width: fit-content;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .status-indicator.active {
+            background-color: rgba(58, 196, 125, 0.1);
+            color: var(--secondary-color);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+            height: 10px;
+            width: 10px;
+            background-color: var(--danger-color);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.active .pulse {
+            background-color: var(--secondary-color);
+        }
+        
+        /* Animated pulse effect */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Fix for analytics page */
+        #analytics-page .card {
+            margin-bottom: 20px;
+        }
+        
+        /* Fix for threats page */
+        #threats-page .card {
+            margin-bottom: 20px;
+        }
+        
+        /* Ensure tables scroll correctly */
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+            width: 100%;
+        }
+        
+        /* Ensure map containers have proper height */
+        #worldMap, #threatMap {
+            height: 300px;
+            min-height: 200px;
+        }
+        
+        /* Fix tab content overflow */
+        .tab-content {
+            overflow: visible;
+            width: 100%;
+        }
+        
+        /* Fix tab panes heights */
+        .tab-pane {
+            height: auto;
+            overflow-y: visible;
+        }
+        
+        /* Fix scrollbar on Windows */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        /* Reduce spacings on smaller screens */
+        @media (max-width: 768px) {
+            .content {
+                padding: 10px;
+            }
+            
+            .card {
+                margin-bottom: 15px;
+            }
+            
+            /* Reduce chart heights on mobile */
+            .chart-container {
+                min-height: 200px;
+            }
+            
+            /* Adjust table containers on mobile */
+            .table-responsive {
+                max-height: 300px;
+            }
+        }
+        
+        /* Improved chart containers */
+        .chart-container {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 300px;
+            max-height: 500px;
+            position: relative;
+            margin-bottom: 20px;
+            overflow: visible;
+        }
+        
+        /* Traffic chart specific */
+        #trafficChart {
+            min-height: 300px;
+            width: 100%;
+        }
+        
+        /* Attack types chart specific */
+        #attackTypesChart {
+            min-height: 250px;
+            width: 100%;
+        }
+        
+        canvas {
+            max-width: 100%;
+            height: auto !important;
+        }
+        
+        /* Fix for page container display */
+        .page-container {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            min-height: 100vh;
+            box-sizing: border-box;
+            padding-bottom: 60px; 
+            transition: opacity 0.3s ease-out;
+        }
+        
+        .page-container.active-page {
+            visibility: visible;
+            opacity: 1;
+            position: relative;
+        }
+        
+        /* Fix row layout */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        
+        /* Fix content spacing */
+        .card {
+            margin-bottom: 25px;
+            overflow: visible;
+        }
+        
+        .card-body {
+            overflow-y: visible;
+        }
+        
+        /* Fix tab content */
+        .tab-content {
+            overflow: visible;
+            width: 100%;
+        }
+        
+        /* Ensure tables scroll correctly */
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+            width: 100%;
+        }
+    </style>
+    <!-- Rest of styles will be kept in next edit -->
+</head>
+<body>
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <i class="bi bi-shield-lock"></i>
+                <span>AI IDS</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" data-page="dashboard-page"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                <li><a href="#" data-page="analytics-page"><i class="bi bi-graph-up"></i> Analytics</a></li>
+                <li><a href="#" data-page="threats-page"><i class="bi bi-shield-exclamation"></i> Threats</a></li>
+                <li><a href="#" data-page="settings-page"><i class="bi bi-gear"></i> Settings</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Dashboard Page -->
+            <div class="page-container active-page" id="dashboard-page">
+                <div class="container-fluid p-0">
+                    <!-- Controls & Status -->
+                    <div class="row g-2 align-items-center mb-2">
+                        <div class="col-lg-9 col-md-8 col-12">
+                            <div class="monitoring-controls gap-2">
+                                <button id="startMonitoringBtn" class="btn btn-primary btn-monitor"><i class="bi bi-play-fill"></i> Start Monitoring</button>
+                                <button id="stopMonitoringBtn" class="btn btn-danger btn-monitor" disabled><i class="bi bi-stop-fill"></i> Stop Monitoring</button>
+                                <button id="clearDataBtn" class="btn btn-warning btn-monitor"><i class="bi bi-trash"></i> Clear Data</button>
+                                <button id="resetSystemBtn" class="btn btn-secondary btn-monitor"><i class="bi bi-arrow-counterclockwise"></i> Reset System</button>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-12 text-end">
+                            <div class="status-indicator d-inline-flex align-items-center">
+                                <span class="pulse"></span>
+                                <span id="statusText">Monitoring Inactive</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stats Row -->
+                    <div class="row g-2 mb-2">
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card primary"><div class="card-body"><i class="bi bi-shield-check stat-icon"></i><h2 id="totalPackets">0</h2><h5>Total Packets</h5></div></div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card success"><div class="card-body"><i class="bi bi-check-circle stat-icon"></i><h2 id="safePackets">0</h2><h5>Safe Packets</h5></div></div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card danger"><div class="card-body"><i class="bi bi-exclamation-triangle stat-icon"></i><h2 id="threatPackets">0</h2><h5>Threat Packets</h5></div></div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card warning"><div class="card-body"><i class="bi bi-question-circle stat-icon"></i><h2 id="suspiciousPackets">0</h2><h5>Suspicious Packets</h5></div></div>
+                        </div>
+                    </div>
+                    <!-- Charts Row 1 -->
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-6">
+                            <div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Traffic Overview</div><div class="card-body"><div class="chart-parent"><canvas id="trafficChart"></canvas></div></div></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart"></i> Attack Types</div><div class="card-body"><div class="chart-parent"><canvas id="attackTypesChart"></canvas></div></div></div>
+                        </div>
+                    </div>
+                    <!-- Charts Row 2 -->
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-6">
+                            <div class="card h-100"><div class="card-header"><i class="bi bi-globe"></i> Attack Sources</div><div class="card-body"><div class="chart-parent"><canvas id="sourcesChart"></canvas></div></div></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100"><div class="card-header"><i class="bi bi-clock-history"></i> Attack Timeline</div><div class="card-body"><div class="chart-parent"><canvas id="attackTimelineChart"></canvas></div></div></div>
+                        </div>
+                    </div>
+                    <!-- Alerts Row -->
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <div class="card"><div class="card-header"><i class="bi bi-bell"></i> Recent Alerts</div><div class="card-body p-2"><div class="table-responsive"><table class="table table-sm mb-0"><thead class="sticky-top"><tr><th>Time</th><th>Type</th><th>Source IP</th><th>Destination IP</th><th>Protocol</th><th>Status</th></tr></thead><tbody id="alertsTable"></tbody></table></div></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div class="page-container" id="analytics-page">
+                <div class="container-fluid p-0">
+                    <div class="row g-2 mb-2">
+                        <div class="col-12">
+                            <div class="card h-100">
+                                <div class="card-header"><i class="bi bi-graph-up"></i> Hourly Traffic</div>
+                                <div class="card-body"><div class="chart-parent"><canvas id="analyticsChart"></canvas></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Add more analytics charts/tables as needed -->
+                </div>
+            </div>
+
+            <!-- Threats Page -->
+            <div class="page-container" id="threats-page">
+                <div class="container-fluid p-0">
+                    <div class="row g-2 mb-2">
+                        <div class="col-12">
+                            <div class="card h-100">
+                                <div class="card-header"><i class="bi bi-shield-exclamation"></i> Threats</div>
+                                <div class="card-body p-2">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-0">
+                                            <thead class="sticky-top"><tr><th>Time</th><th>Type</th><th>Source</th><th>Severity</th><th>Status</th><th>Action</th></tr></thead>
+                                            <tbody id="threatsTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div class="page-container" id="settings-page">
+                <div class="container-fluid p-0">
+                    <div class="row g-2 mb-2">
+                        <div class="col-12">
+                            <div class="card h-100">
+                                <div class="card-header"><i class="bi bi-gear"></i> Settings</div>
+                                <div class="card-body">
+                                    <form id="settingsForm" autocomplete="off">
+                                        <div class="mb-2">
+                                            <label class="form-label">Auto Reset</label>
+                                            <input type="checkbox" name="auto_reset" class="form-check-input" />
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Detection Sensitivity</label>
+                                            <select name="detection_sensitivity" class="form-select form-select-sm">
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Log Level</label>
+                                            <select name="log_level" class="form-select form-select-sm">
+                                                <option value="info">Info</option>
+                                                <option value="warning">Warning</option>
+                                                <option value="error">Error</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Refresh Rate (seconds)</label>
+                                            <input type="number" name="refresh_rate" class="form-control form-control-sm" min="1" max="60" />
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm mt-2">Save Settings</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <button id="darkModeToggle" class="btn">
+        <i class="bi bi-moon-stars"></i>
+    </button>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics | AI-Powered IDS{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="page-header mb-3">
+        <h4><i class="bi bi-bar-chart-line"></i> Network Traffic Analytics</h4>
+        <p class="text-muted">Comprehensive traffic analysis and threat intelligence</p>
+    </div>
+    
+    <!-- Traffic Analysis Section -->
+    <div class="row g-2 mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div><i class="bi bi-graph-up"></i> Hourly Traffic</div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-secondary active" data-time="24h">24h</button>
+                        <button class="btn btn-sm btn-outline-secondary" data-time="7d">7d</button>
+                        <button class="btn btn-sm btn-outline-secondary" data-time="30d">30d</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="hourlyTrafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attack Distribution Section -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-pie-chart"></i> Attack Distribution
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="attackDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-diagram-3"></i> Traffic Sources
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="trafficSourcesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Timeline Section -->
+    <div class="row g-2 mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-calendar-week"></i> Weekly Attack Timeline
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="weeklyAttackChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Traffic Stats Section -->
+    <div class="row g-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-table"></i> Traffic Statistics
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="sticky-top bg-light">
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Last 24h</th>
+                                    <th>Last 7d</th>
+                                    <th>Last 30d</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Total Traffic</td>
+                                    <td>{{ 100 + range(50, 200)|random }} Packets</td>
+                                    <td>{{ 1000 + range(200, 800)|random }} Packets</td>
+                                    <td>{{ 5000 + range(1000, 3000)|random }} Packets</td>
+                                    <td><span class="text-success"><i class="bi bi-arrow-up"></i> 12%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Attack Attempts</td>
+                                    <td>{{ range(5, 20)|random }}</td>
+                                    <td>{{ range(30, 70)|random }}</td>
+                                    <td>{{ range(100, 300)|random }}</td>
+                                    <td><span class="text-danger"><i class="bi bi-arrow-up"></i> 8%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Blocked Attacks</td>
+                                    <td>{{ range(4, 15)|random }}</td>
+                                    <td>{{ range(25, 60)|random }}</td>
+                                    <td>{{ range(80, 200)|random }}</td>
+                                    <td><span class="text-success"><i class="bi bi-arrow-up"></i> 15%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Unique Attacker IPs</td>
+                                    <td>{{ range(2, 8)|random }}</td>
+                                    <td>{{ range(10, 30)|random }}</td>
+                                    <td>{{ range(40, 100)|random }}</td>
+                                    <td><span class="text-danger"><i class="bi bi-arrow-up"></i> 5%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Avg. Response Time</td>
+                                    <td>{{ range(50, 200)|random }}ms</td>
+                                    <td>{{ range(60, 220)|random }}ms</td>
+                                    <td>{{ range(70, 250)|random }}ms</td>
+                                    <td><span class="text-warning"><i class="bi bi-arrow-up"></i> 3%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Max Packet Size</td>
+                                    <td>{{ range(800, 1500)|random }} bytes</td>
+                                    <td>{{ range(1000, 1500)|random }} bytes</td>
+                                    <td>{{ range(1200, 1500)|random }} bytes</td>
+                                    <td><span class="text-success"><i class="bi bi-arrow-up"></i> 2%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Avg Packet Size</td>
+                                    <td>{{ range(200, 800)|random }} bytes</td>
+                                    <td>{{ range(200, 800)|random }} bytes</td>
+                                    <td>{{ range(200, 800)|random }} bytes</td>
+                                    <td><span class="text-muted"><i class="bi bi-dash"></i> 0%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>TCP Traffic</td>
+                                    <td>{{ range(30, 80)|random }}%</td>
+                                    <td>{{ range(30, 80)|random }}%</td>
+                                    <td>{{ range(30, 80)|random }}%</td>
+                                    <td><span class="text-success"><i class="bi bi-arrow-up"></i> 4%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>UDP Traffic</td>
+                                    <td>{{ range(10, 50)|random }}%</td>
+                                    <td>{{ range(10, 50)|random }}%</td>
+                                    <td>{{ range(10, 50)|random }}%</td>
+                                    <td><span class="text-danger"><i class="bi bi-arrow-down"></i> 3%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>ICMP Traffic</td>
+                                    <td>{{ range(5, 20)|random }}%</td>
+                                    <td>{{ range(5, 20)|random }}%</td>
+                                    <td>{{ range(5, 20)|random }}%</td>
+                                    <td><span class="text-warning"><i class="bi bi-arrow-up"></i> 1%</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts
+        initAnalyticsCharts();
+        
+        // Set up time period buttons
+        const timeButtons = document.querySelectorAll('[data-time]');
+        timeButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                timeButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                // Update chart data for selected time period
+                updateChartData(this.dataset.time);
+            });
+        });
+        
+        // Initial data load
+        updateChartData('24h');
+    });
+    
+    function initAnalyticsCharts() {
+        // Hourly Traffic Chart
+        const hourlyCtx = document.getElementById('hourlyTrafficChart').getContext('2d');
+        window.hourlyTrafficChart = new Chart(hourlyCtx, {
+            type: 'line',
+            data: {
+                labels: [], // Will be populated by updateChartData
+                datasets: [{
+                    label: 'Traffic',
+                    data: [],
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Attack Distribution Chart
+        const distributionCtx = document.getElementById('attackDistributionChart').getContext('2d');
+        window.attackDistributionChart = new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['DoS', 'Port Scan', 'Brute Force', 'SQL Injection', 'XSS', 'Other'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0, 0],
+                    backgroundColor: [
+                        '#f64e60',
+                        '#ff9800',
+                        '#3ac47d',
+                        '#4361ee',
+                        '#6f42c1',
+                        '#adb5bd'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Traffic Sources Chart
+        const sourcesCtx = document.getElementById('trafficSourcesChart').getContext('2d');
+        window.trafficSourcesChart = new Chart(sourcesCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Internal', 'External', 'Unknown'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: [
+                        '#3ac47d',
+                        '#4361ee',
+                        '#adb5bd'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Weekly Attack Chart
+        const weeklyCtx = document.getElementById('weeklyAttackChart').getContext('2d');
+        window.weeklyAttackChart = new Chart(weeklyCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ days|tojson }},
+                datasets: [{
+                    label: 'Attacks',
+                    data: {{ attack_timeline|tojson }},
+                    backgroundColor: '#f64e60'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateChartData(timePeriod) {
+        fetch(`/api/analytics/data?period=${timePeriod}`)
+        .then(response => response.json())
+        .then(data => {
+            // Update Hourly Traffic Chart
+            if (data.hourly_traffic) {
+                window.hourlyTrafficChart.data.labels = data.hourly_traffic.labels;
+                window.hourlyTrafficChart.data.datasets[0].data = data.hourly_traffic.values;
+                window.hourlyTrafficChart.update();
+            }
+            
+            // Update Attack Distribution Chart
+            if (data.attack_distribution) {
+                window.attackDistributionChart.data.datasets[0].data = [
+                    data.attack_distribution.dos,
+                    data.attack_distribution.port_scan,
+                    data.attack_distribution.brute_force,
+                    data.attack_distribution.sql_injection,
+                    data.attack_distribution.xss,
+                    data.attack_distribution.other
+                ];
+                window.attackDistributionChart.update();
+            }
+            
+            // Update Traffic Sources Chart
+            if (data.traffic_sources) {
+                window.trafficSourcesChart.data.datasets[0].data = [
+                    data.traffic_sources.internal,
+                    data.traffic_sources.external,
+                    data.traffic_sources.unknown
+                ];
+                window.trafficSourcesChart.update();
+            }
+            
+            // Update Weekly Attack Chart
+            if (data.attack_timeline) {
+                window.weeklyAttackChart.data.datasets[0].data = data.attack_timeline;
+                window.weeklyAttackChart.update();
+            }
+        })
+        .catch(error => console.error('Error fetching analytics data:', error));
+    }
+</script>
+{% endblock %} 

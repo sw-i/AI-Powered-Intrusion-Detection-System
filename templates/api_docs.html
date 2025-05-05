@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation | AI-Powered IDS{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="page-header mb-3">
+        <h4><i class="bi bi-journal-text"></i> API Documentation</h4>
+        <p class="text-muted">Reference for all available API endpoints in the IDS dashboard</p>
+    </div>
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <strong>Dashboard & Analytics</strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>GET /api/stats</strong>
+                        <p class="mb-1">Get current system statistics and recent alerts.</p>
+                        <pre><code>curl http://localhost:5000/api/stats</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>GET /api/analytics/data</strong>
+                        <p class="mb-1">Get analytics data for charts (traffic, attacks, sources, timeline).</p>
+                        <pre><code>curl http://localhost:5000/api/analytics/data</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header bg-warning text-dark">
+                    <strong>Threats & Simulation</strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>GET /api/threats</strong>
+                        <p class="mb-1">Get a list of detected threats.</p>
+                        <pre><code>curl http://localhost:5000/api/threats</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/threats/block</strong>
+                        <p class="mb-1">Block a threatening IP address.</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/threats/block -H "Content-Type: application/json" -d '{"ip": "192.168.1.105"}'</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/simulate/dos</strong>
+                        <p class="mb-1">Simulate a DoS attack (for demo/testing).</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/simulate/dos -H "Content-Type: application/json" -d '{"target_ip": "10.0.0.1", "packets": 100}'</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/simulate/port_scan</strong>
+                        <p class="mb-1">Simulate a port scan (for demo/testing).</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/simulate/port_scan -H "Content-Type: application/json" -d '{"target_ip": "10.0.0.1", "ports": 20}'</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/simulate/brute_force</strong>
+                        <p class="mb-1">Simulate a brute force attack (for demo/testing).</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/simulate/brute_force -H "Content-Type: application/json" -d '{"target_ip": "10.0.0.1", "attempts": 10}'</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header bg-info text-dark">
+                    <strong>Monitoring & System</strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>POST /api/start_monitoring</strong>
+                        <p class="mb-1">Start the monitoring process.</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/start_monitoring</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/stop_monitoring</strong>
+                        <p class="mb-1">Stop the monitoring process.</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/stop_monitoring</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/clear_data</strong>
+                        <p class="mb-1">Clear all collected data and statistics.</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/clear_data</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/reset_system</strong>
+                        <p class="mb-1">Reset the entire system (stop monitoring, clear all data).</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/reset_system</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <strong>Settings</strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>GET /api/system/settings</strong>
+                        <p class="mb-1">Get current system settings.</p>
+                        <pre><code>curl http://localhost:5000/api/system/settings</code></pre>
+                    </div>
+                    <div class="mb-3">
+                        <strong>POST /api/system/settings</strong>
+                        <p class="mb-1">Update system settings (JSON body required).</p>
+                        <pre><code>curl -X POST http://localhost:5000/api/system/settings -H "Content-Type: application/json" -d '{"detection_sensitivity": "high", "refresh_rate": 2000, ...}'</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+
+{% block title %}Threats | AI-Powered IDS{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="page-header mb-3">
+        <h4><i class="bi bi-shield-exclamation"></i> Threat Management</h4>
+        <p class="text-muted">View and respond to detected security threats</p>
+    </div>
+    
+    <!-- Stat Cards Row: full width, no gaps -->
+    <div class="row g-0 mb-3">
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="stat-card primary h-100 rounded-0 rounded-start">
+                <div class="card-body p-3">
+                    <i class="bi bi-shield-exclamation stat-icon"></i>
+                    <h3>{{ threats|length }}</h3>
+                    <h6>TOTAL THREATS</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="stat-card danger h-100">
+                <div class="card-body p-3">
+                    <i class="bi bi-exclamation-triangle stat-icon"></i>
+                    <h3>{{ threats|selectattr('severity', 'equalto', 'High')|list|length }}</h3>
+                    <h6>HIGH SEVERITY</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="stat-card warning h-100">
+                <div class="card-body p-3">
+                    <i class="bi bi-clock stat-icon"></i>
+                    <h3>{{ threats|selectattr('status', 'equalto', 'Active')|list|length }}</h3>
+                    <h6>ACTIVE THREATS</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="stat-card success h-100 rounded-0 rounded-end">
+                <div class="card-body p-3">
+                    <i class="bi bi-check-circle stat-icon"></i>
+                    <h3>{{ threats|selectattr('status', 'equalto', 'Blocked')|list|length }}</h3>
+                    <h6>BLOCKED THREATS</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Threat Table Card -->
+    <div class="row g-2 mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom">
+                    <div class="fw-semibold"><i class="bi bi-sliders"></i> Threat Management</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group me-2">
+                            <button class="btn btn-sm btn-outline-secondary active" data-filter="all">All</button>
+                            <button class="btn btn-sm btn-outline-secondary" data-filter="active">Active</button>
+                            <button class="btn btn-sm btn-outline-secondary" data-filter="blocked">Blocked</button>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" id="blockAllBtn">Block All Active</button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 340px; overflow-y: auto;">
+                        <table class="table table-hover table-sm mb-0 align-middle">
+                            <thead class="sticky-top bg-light">
+                                <tr>
+                                    <th style="min-width:110px">Timestamp</th>
+                                    <th style="min-width:140px">IP Address</th>
+                                    <th style="min-width:110px">Type</th>
+                                    <th style="min-width:90px">Severity</th>
+                                    <th style="min-width:90px">Status</th>
+                                    <th style="min-width:120px">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="threatsTable">
+                                {% for threat in threats %}
+                                <tr data-status="{{ threat.status|lower }}" class="threat-row">
+                                    <td>{{ threat.timestamp }}</td>
+                                    <td>{{ threat.ip }}</td>
+                                    <td>{{ threat.type }}</td>
+                                    <td>
+                                        <span class="badge {% if threat.severity == 'High' %}bg-danger{% elif threat.severity == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ threat.severity }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if threat.status == 'Active' %}bg-warning text-dark{% elif threat.status == 'Blocked' %}bg-success{% elif threat.status == 'Mitigated' %}bg-info text-dark{% elif threat.status == 'Investigating' %}bg-secondary{% else %}bg-secondary{% endif %}">
+                                            {{ threat.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            {% if threat.status == 'Active' %}
+                                            <button class="btn btn-sm btn-outline-danger block-btn" data-ip="{{ threat.ip }}">Block</button>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>Blocked</button>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-outline-primary view-details-btn" data-ip="{{ threat.ip }}">Details</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No threats detected</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Threat Intelligence Row -->
+    <div class="row g-2">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-globe"></i> Threat Origin Map
+                </div>
+                <div class="card-body">
+                    <div id="threatMap" class="threat-map">
+                        <div class="text-center p-5">
+                            <i class="bi bi-map text-muted" style="font-size: 3rem;"></i>
+                            <p class="mt-3 text-muted">Threat origin map visualization would appear here with IP geolocation data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart"></i> Threat Trends
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="threatTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Threat Details Modal -->
+    <div class="modal fade" id="threatDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-shield-exclamation"></i> Threat Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="threatDetails">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>IP Information</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>IP Address:</th>
+                                        <td id="modalIP"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Country:</th>
+                                        <td id="modalCountry"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>ASN:</th>
+                                        <td id="modalASN"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>First Seen:</th>
+                                        <td id="modalFirstSeen"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Reputation:</th>
+                                        <td id="modalReputation"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Threat Analysis</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Type:</th>
+                                        <td id="modalType"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Severity:</th>
+                                        <td id="modalSeverity"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status:</th>
+                                        <td id="modalStatus"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Confidence:</th>
+                                        <td id="modalConfidence"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Attack Count:</th>
+                                        <td id="modalAttackCount"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Recent Activity</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Destination</th>
+                                                <th>Activity</th>
+                                                <th>Protocol</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="modalActivity">
+                                            <!-- Activity rows will be populated dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Recommendations</h6>
+                                <div id="modalRecommendations" class="alert alert-info">
+                                    <!-- Recommendations will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="modalBlockBtn" class="btn btn-danger">Block IP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize threat trends chart
+        initThreatTrendsChart();
+        
+        // Set up filter buttons
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                filterButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                // Filter threats based on selected filter
+                filterThreats(this.dataset.filter);
+            });
+        });
+        
+        // Set up block buttons
+        const blockBtns = document.querySelectorAll('.block-btn');
+        blockBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                blockIP(this.dataset.ip, this);
+            });
+        });
+        
+        // Set up block all button
+        const blockAllBtn = document.getElementById('blockAllBtn');
+        if (blockAllBtn) {
+            blockAllBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to block all active threats?')) {
+                    const activeBtns = document.querySelectorAll('.block-btn');
+                    activeBtns.forEach(btn => {
+                        blockIP(btn.dataset.ip, btn);
+                    });
+                }
+            });
+        }
+        
+        // Set up view details buttons
+        const viewDetailsBtns = document.querySelectorAll('.view-details-btn');
+        viewDetailsBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                showThreatDetails(this.dataset.ip);
+            });
+        });
+        
+        // Set up modal block button
+        const modalBlockBtn = document.getElementById('modalBlockBtn');
+        if (modalBlockBtn) {
+            modalBlockBtn.addEventListener('click', function() {
+                const ip = document.getElementById('modalIP').textContent;
+                if (ip) {
+                    const btn = document.querySelector(`.block-btn[data-ip="${ip}"]`);
+                    blockIP(ip, btn);
+                    
+                    // Update modal status
+                    document.getElementById('modalStatus').textContent = 'Blocked';
+                    document.getElementById('modalStatus').className = 'badge bg-success';
+                    modalBlockBtn.disabled = true;
+                    
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('threatDetailsModal')).hide();
+                }
+            });
+        }
+    });
+    
+    function initThreatTrendsChart() {
+        const ctx = document.getElementById('threatTrendsChart').getContext('2d');
+        window.threatTrendsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['7 Days Ago', '6 Days Ago', '5 Days Ago', '4 Days Ago', '3 Days Ago', '2 Days Ago', 'Yesterday', 'Today'],
+                datasets: [{
+                    label: 'DoS Attacks',
+                    data: [3, 1, 4, 2, 5, 3, 6, 4],
+                    borderColor: '#f64e60',
+                    backgroundColor: 'rgba(246, 78, 96, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Port Scans',
+                    data: [5, 6, 3, 8, 9, 4, 3, 2],
+                    borderColor: '#ff9800',
+                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Brute Force',
+                    data: [1, 2, 0, 3, 2, 5, 4, 1],
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Attacks'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function filterThreats(filter) {
+        const rows = document.querySelectorAll('.threat-row');
+        rows.forEach(row => {
+            if (filter === 'all') {
+                row.style.display = '';
+            } else {
+                if (row.dataset.status === filter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    function blockIP(ip, buttonEl) {
+        fetch('/api/threats/block', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ip: ip })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                const row = buttonEl.closest('tr');
+                row.dataset.status = 'blocked';
+                
+                // Update status cell
+                const statusCell = row.querySelector('td:nth-child(5)');
+                if (statusCell) {
+                    statusCell.innerHTML = '<span class="badge bg-success">Blocked</span>';
+                }
+                
+                // Update actions cell
+                const actionsCell = row.querySelector('td:nth-child(6)');
+                if (actionsCell) {
+                    actionsCell.innerHTML = `
+                        <button class="btn btn-sm btn-outline-secondary" disabled>Blocked</button>
+                        <button class="btn btn-sm btn-outline-primary view-details-btn" data-ip="${ip}">Details</button>
+                    `;
+                    
+                    // Re-attach event listener to details button
+                    const detailsBtn = actionsCell.querySelector('.view-details-btn');
+                    if (detailsBtn) {
+                        detailsBtn.addEventListener('click', function() {
+                            showThreatDetails(this.dataset.ip);
+                        });
+                    }
+                }
+                
+                // Update stats
+                updateThreatStats();
+                
+                // Show success message
+                alert(`IP ${ip} has been successfully blocked.`);
+            } else {
+                alert(`Error blocking IP: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error blocking IP:', error);
+            alert('An error occurred while trying to block the IP.');
+        });
+    }
+    
+    function showThreatDetails(ip) {
+        // In a real app, this would fetch detailed data for the specific IP
+        // For demo, we'll use mocked data
+        
+        // Update modal fields
+        document.getElementById('modalIP').textContent = ip;
+        document.getElementById('modalCountry').textContent = getRandomCountry();
+        document.getElementById('modalASN').textContent = `AS${Math.floor(Math.random() * 100000)}`;
+        document.getElementById('modalFirstSeen').textContent = new Date(Date.now() - Math.floor(Math.random() * 30) * 86400000).toLocaleDateString();
+        
+        const reputation = ['Good', 'Neutral', 'Bad', 'Very Bad'][Math.floor(Math.random() * 4)];
+        document.getElementById('modalReputation').textContent = reputation;
+        
+        // Find the threat in the table to get its data
+        const row = document.querySelector(`tr[data-ip="${ip}"]`);
+        if (row) {
+            document.getElementById('modalType').textContent = row.querySelector('td:nth-child(3)').textContent;
+            
+            const severity = row.querySelector('td:nth-child(4) .badge').textContent.trim();
+            document.getElementById('modalSeverity').textContent = severity;
+            document.getElementById('modalSeverity').className = `badge bg-${severity === 'High' ? 'danger' : severity === 'Medium' ? 'warning' : 'secondary'}`;
+            
+            const status = row.querySelector('td:nth-child(5) .badge').textContent.trim();
+            document.getElementById('modalStatus').textContent = status;
+            document.getElementById('modalStatus').className = `badge bg-${status === 'Active' ? 'warning' : status === 'Blocked' ? 'success' : 'secondary'}`;
+            
+            // Disable/enable block button based on status
+            document.getElementById('modalBlockBtn').disabled = status === 'Blocked';
+        }
+        
+        // Set random confidence and attack count
+        document.getElementById('modalConfidence').textContent = `${Math.floor(Math.random() * 50) + 50}%`;
+        document.getElementById('modalAttackCount').textContent = Math.floor(Math.random() * 20) + 1;
+        
+        // Generate random activity
+        const activityTable = document.getElementById('modalActivity');
+        activityTable.innerHTML = '';
+        
+        const numActivities = Math.floor(Math.random() * 5) + 3;
+        for (let i = 0; i < numActivities; i++) {
+            const tr = document.createElement('tr');
+            
+            const timestamp = new Date(Date.now() - i * Math.floor(Math.random() * 3600000));
+            const destination = `10.0.0.${Math.floor(Math.random() * 255)}`;
+            const activities = ['Port Scan', 'Connection Attempt', 'DoS Attack', 'Login Attempt', 'Data Exfiltration'];
+            const activity = activities[Math.floor(Math.random() * activities.length)];
+            const protocols = ['TCP', 'UDP', 'HTTP', 'HTTPS', 'ICMP'];
+            const protocol = protocols[Math.floor(Math.random() * protocols.length)];
+            const statuses = ['Blocked', 'Detected', 'Suspicious'];
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            
+            tr.innerHTML = `
+                <td>${timestamp.toLocaleTimeString()}</td>
+                <td>${destination}</td>
+                <td>${activity}</td>
+                <td>${protocol}</td>
+                <td><span class="badge bg-${status === 'Blocked' ? 'success' : status === 'Detected' ? 'warning' : 'secondary'}">${status}</span></td>
+            `;
+            
+            activityTable.appendChild(tr);
+        }
+        
+        // Generate recommendations
+        const recommendations = [
+            "This IP has been involved in multiple attack attempts. It is recommended to block this IP address.",
+            "This appears to be a port scan. Consider blocking this IP address if it is not an expected scanner.",
+            "This IP has been flagged for DoS activity. We recommend blocking and reporting to your ISP.",
+            "Multiple failed login attempts detected. Implement rate limiting for this IP address.",
+            "This IP is known for malicious activity across multiple networks. Block immediately."
+        ];
+        
+        document.getElementById('modalRecommendations').textContent = recommendations[Math.floor(Math.random() * recommendations.length)];
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('threatDetailsModal'));
+        modal.show();
+    }
+    
+    function updateThreatStats() {
+        // Count total threats
+        const totalThreats = document.querySelectorAll('.threat-row').length;
+        const highSeverityThreats = document.querySelectorAll('.threat-row td:nth-child(4) .badge-danger, .threat-row td:nth-child(4) .bg-danger').length;
+        const activeThreats = document.querySelectorAll('.threat-row[data-status="active"]').length;
+        const blockedThreats = document.querySelectorAll('.threat-row[data-status="blocked"]').length;
+        
+        // Update stat cards
+        const statCards = document.querySelectorAll('.stat-card h3');
+        if (statCards.length >= 4) {
+            statCards[0].textContent = totalThreats;
+            statCards[1].textContent = highSeverityThreats;
+            statCards[2].textContent = activeThreats;
+            statCards[3].textContent = blockedThreats;
+        }
+    }
+    
+    function getRandomCountry() {
+        const countries = ['United States', 'China', 'Russia', 'Brazil', 'Germany', 'India', 'United Kingdom', 'France', 'Japan', 'Canada'];
+        return countries[Math.floor(Math.random() * countries.length)];
+    }
+</script>
+{% endblock %} 

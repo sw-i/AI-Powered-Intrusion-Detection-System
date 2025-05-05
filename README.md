@@ -103,20 +103,12 @@ To train a customized detection model:
 python scripts/train_enhanced_model.py
 ```
 
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
 ## Acknowledgments
 
 - KDD Cup 1999 Dataset for baseline training data
 - Scapy and PyShark libraries for packet handling
 - Scikit-learn for machine learning algorithms 
-
-## screenshot of project
-![Screenshot 2025-05-05 154548](https://github.com/user-attachments/assets/bfa752f8-849d-46f2-995b-ab919e27f64b)
-
-![Screenshot 2025-05-05 154605](https://github.com/user-attachments/assets/5a9ec00e-19cf-4633-b445-e56d49444864)
-
-![Screenshot 2025-05-05 154629](https://github.com/user-attachments/assets/b2e8293c-ecd8-4dc6-83a0-aa113719f737)
-
-![Screenshot 2025-05-05 154651](https://github.com/user-attachments/assets/9c9e3e99-2638-43ed-8daa-bcf74e076f44)
-
-![Screenshot 2025-05-05 154711](https://github.com/user-attachments/assets/28e363cc-c058-4c3a-9d10-5f944c2da133)
-

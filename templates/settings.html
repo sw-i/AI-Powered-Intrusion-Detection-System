@@ -1,0 +1,758 @@
+{% extends "base.html" %}
+
+{% block title %}Settings | AI-Powered IDS{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="page-header mb-3">
+        <h4><i class="bi bi-gear"></i> System Settings</h4>
+        <p class="text-muted">Configure monitoring settings, notifications, and system maintenance</p>
+    </div>
+    
+    <!-- Settings Tabs -->
+    <div class="card mb-3">
+        <div class="card-body p-0">
+            <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring" type="button" role="tab" aria-controls="monitoring" aria-selected="true">
+                        <i class="bi bi-eye"></i> Monitoring
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false">
+                        <i class="bi bi-bell"></i> Notifications
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab" aria-controls="maintenance" aria-selected="false">
+                        <i class="bi bi-tools"></i> Maintenance
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">
+                        <i class="bi bi-journal-text"></i> Logs
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content p-3" id="settingsTabsContent">
+                <!-- Monitoring Settings -->
+                <div class="tab-pane fade show active" id="monitoring" role="tabpanel" aria-labelledby="monitoring-tab">
+                    <form id="monitoringSettingsForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="bi bi-sliders"></i> Detection Settings
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="detectionSensitivity" class="form-label">Detection Sensitivity</label>
+                                            <select class="form-select" id="detectionSensitivity" name="detection_sensitivity">
+                                                <option value="low" {% if settings.detection_sensitivity == 'low' %}selected{% endif %}>Low: Fewer alerts, reduced false positives</option>
+                                                <option value="medium" {% if settings.detection_sensitivity == 'medium' %}selected{% endif %}>Medium: Balanced detection</option>
+                                                <option value="high" {% if settings.detection_sensitivity == 'high' %}selected{% endif %}>High: Maximum detection, more false positives</option>
+                                            </select>
+                                            <div class="form-text">Adjust how sensitive the system is to potential threats.</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="refreshRate" class="form-label">Dashboard Refresh Rate (ms)</label>
+                                            <input type="number" class="form-control" id="refreshRate" name="refresh_rate" min="1000" max="10000" step="500" value="{{ settings.refresh_rate }}">
+                                            <div class="form-text">How often the dashboard updates (1000ms - 10000ms).</div>
+                                        </div>
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="autoReset" name="auto_reset" {% if settings.auto_reset %}checked{% endif %}>
+                                            <label class="form-check-label" for="autoReset">Auto-reset after inactivity (1 hour)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="bi bi-shield-lock"></i> Monitoring Configuration
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Network Interfaces to Monitor</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="eth0" id="eth0" name="interfaces[]" checked>
+                                                <label class="form-check-label" for="eth0">eth0 (Main Network)</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="wlan0" id="wlan0" name="interfaces[]" checked>
+                                                <label class="form-check-label" for="wlan0">wlan0 (Wireless)</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="lo" id="lo" name="interfaces[]">
+                                                <label class="form-check-label" for="lo">lo (Loopback)</label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="monitoringMode" class="form-label">Monitoring Mode</label>
+                                            <select class="form-select" id="monitoringMode" name="monitoring_mode">
+                                                <option value="passive" selected>Passive (Detection Only)</option>
+                                                <option value="active">Active (Detection & Automatic Response)</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="enableAI" name="enable_ai" checked>
+                                            <label class="form-check-label" for="enableAI">Enable AI-assisted detection</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-filter-square"></i> Filtering Rules
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="ignoreIPs" class="form-label">Ignore Internal IPs (one per line)</label>
+                                            <textarea class="form-control" id="ignoreIPs" name="ignore_ips" rows="3" placeholder="192.168.1.10&#10;10.0.0.5">{{ settings.ignore_ips|join('\n') }}</textarea>
+                                            <div class="form-text">Traffic from these IPs will not trigger alerts.</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="customRules" class="form-label">Custom Detection Rules</label>
+                                            <textarea class="form-control" id="customRules" name="custom_rules" rows="3" placeholder="PORT:22;ACTION:ALERT&#10;IP:1.2.3.4;ACTION:BLOCK">{{ settings.custom_rules|join('\n') }}</textarea>
+                                            <div class="form-text">Custom rules use format: CONDITION;ACTION</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="reset" class="btn btn-secondary">Reset</button>
+                            <button type="submit" class="btn btn-primary" id="saveMonitoringBtn">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Notifications Settings -->
+                <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+                    <form id="notificationsSettingsForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="bi bi-envelope"></i> Email Notifications
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="enableEmail" name="enable_email" {% if settings.enable_email %}checked{% endif %}>
+                                            <label class="form-check-label" for="enableEmail">Enable Email Notifications</label>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="emailRecipients" class="form-label">Recipients (comma separated)</label>
+                                            <input type="text" class="form-control" id="emailRecipients" name="email_recipients" value="{{ settings.email_recipients|join(',') }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="emailSeverity" class="form-label">Minimum Severity to Notify</label>
+                                            <select class="form-select" id="emailSeverity" name="email_severity">
+                                                <option value="low" {% if settings.email_severity == 'low' %}selected{% endif %}>Low</option>
+                                                <option value="medium" {% if settings.email_severity == 'medium' %}selected{% endif %}>Medium</option>
+                                                <option value="high" {% if settings.email_severity == 'high' %}selected{% endif %}>High</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <i class="bi bi-app-indicator"></i> System Notifications
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="enablePush" name="enable_push" {% if settings.enable_push %}checked{% endif %}>
+                                            <label class="form-check-label" for="enablePush">Enable Browser Notifications</label>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="pushSeverity" class="form-label">Minimum Severity to Notify</label>
+                                            <select class="form-select" id="pushSeverity" name="push_severity">
+                                                <option value="low" {% if settings.push_severity == 'low' %}selected{% endif %}>Low</option>
+                                                <option value="medium" {% if settings.push_severity == 'medium' %}selected{% endif %}>Medium</option>
+                                                <option value="high" {% if settings.push_severity == 'high' %}selected{% endif %}>High</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="playSounds" name="play_sounds" {% if settings.play_sounds %}checked{% endif %}>
+                                            <label class="form-check-label" for="playSounds">Play Alert Sounds</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-webhook"></i> External Integrations
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="enableWebhooks" name="enable_webhooks" {% if settings.enable_webhooks %}checked{% endif %}>
+                                            <label class="form-check-label" for="enableWebhooks">Enable Webhook Notifications</label>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="webhookUrl" class="form-label">Webhook URL</label>
+                                            <input type="url" class="form-control" id="webhookUrl" name="webhook_url" value="{{ settings.webhook_url }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="webhookFormat" class="form-label">Payload Format</label>
+                                            <select class="form-select" id="webhookFormat" name="webhook_format">
+                                                <option value="json" {% if settings.webhook_format == 'json' %}selected{% endif %}>JSON</option>
+                                                <option value="xml" {% if settings.webhook_format == 'xml' %}selected{% endif %}>XML</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="reset" class="btn btn-secondary">Reset</button>
+                            <button type="submit" class="btn btn-primary" id="saveNotificationsBtn">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Maintenance Settings -->
+                <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="bi bi-database"></i> Data Management
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="dataRetention" class="form-label">Data Retention Period</label>
+                                        <select class="form-select" id="dataRetention" name="data_retention">
+                                            <option value="7" {% if settings.data_retention == 7 %}selected{% endif %}>7 days</option>
+                                            <option value="30" {% if settings.data_retention == 30 %}selected{% endif %}>30 days</option>
+                                            <option value="90" {% if settings.data_retention == 90 %}selected{% endif %}>90 days</option>
+                                            <option value="180" {% if settings.data_retention == 180 %}selected{% endif %}>6 months</option>
+                                            <option value="365" {% if settings.data_retention == 365 %}selected{% endif %}>1 year</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-warning" id="purgeDataBtn">
+                                            <i class="bi bi-trash"></i> Purge Old Data
+                                        </button>
+                                        <small class="d-block mt-2 text-muted">This will delete data older than the retention period.</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-secondary" id="exportDataBtn">
+                                            <i class="bi bi-download"></i> Export All Data
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="bi bi-cpu"></i> System Management
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="logLevel" class="form-label">Logging Level</label>
+                                        <select class="form-select" id="logLevel" name="log_level">
+                                            <option value="debug" {% if settings.log_level == 'debug' %}selected{% endif %}>Debug</option>
+                                            <option value="info" {% if settings.log_level == 'info' %}selected{% endif %}>Info</option>
+                                            <option value="warning" {% if settings.log_level == 'warning' %}selected{% endif %}>Warning</option>
+                                            <option value="error" {% if settings.log_level == 'error' %}selected{% endif %}>Error</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-primary" id="updateSystemBtn">
+                                            <i class="bi bi-arrow-repeat"></i> Check for Updates
+                                        </button>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-danger" id="resetSystemBtn">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Reset System
+                                        </button>
+                                        <small class="d-block mt-2 text-muted">This will reset all settings to default.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-robot"></i> AI Model Management
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Current Model Information</label>
+                                                <table class="table table-sm">
+                                                    <tr>
+                                                        <th>Model Version:</th>
+                                                        <td>v{{ settings.model_version }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Accuracy:</th>
+                                                        <td>{{ settings.model_accuracy }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Last Updated:</th>
+                                                        <td>{{ settings.model_last_updated }}</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-primary mb-2" id="retrainModelBtn">
+                                                    <i class="bi bi-arrow-repeat"></i> Retrain Model
+                                                </button>
+                                                <button type="button" class="btn btn-secondary mb-2" id="downloadModelBtn">
+                                                    <i class="bi bi-download"></i> Download Model
+                                                </button>
+                                                <button type="button" class="btn btn-info mb-2" id="uploadModelBtn">
+                                                    <i class="bi bi-upload"></i> Upload Model
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Logs -->
+                <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div><i class="bi bi-list-ul"></i> System Logs</div>
+                                    <div>
+                                        <div class="input-group">
+                                            <select class="form-select form-select-sm" id="logFilter">
+                                                <option value="all">All Logs</option>
+                                                <option value="error">Errors Only</option>
+                                                <option value="warning">Warnings & Errors</option>
+                                                <option value="info">Info & Above</option>
+                                            </select>
+                                            <button class="btn btn-sm btn-outline-secondary" id="refreshLogsBtn">
+                                                <i class="bi bi-arrow-repeat"></i> Refresh
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-primary" id="downloadLogsBtn">
+                                                <i class="bi bi-download"></i> Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover table-sm mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Timestamp</th>
+                                                    <th>Level</th>
+                                                    <th>Source</th>
+                                                    <th>Message</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="logsTable">
+                                                {% for log in logs %}
+                                                <tr class="log-row {{ log.level|lower }}">
+                                                    <td>{{ log.timestamp }}</td>
+                                                    <td>
+                                                        <span class="badge bg-{% if log.level == 'ERROR' %}danger{% elif log.level == 'WARNING' %}warning{% elif log.level == 'INFO' %}info{% else %}secondary{% endif %}">
+                                                            {{ log.level }}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ log.source }}</td>
+                                                    <td>{{ log.message }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="card-footer d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted">Showing {{ logs|length }} of {{ logs|length }} logs</small>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-secondary" id="clearLogsBtn">
+                                            <i class="bi bi-trash"></i> Clear Logs
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle monitoring settings form submission
+        const monitoringSettingsForm = document.getElementById('monitoringSettingsForm');
+        if (monitoringSettingsForm) {
+            monitoringSettingsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveSettings('monitoring', new FormData(monitoringSettingsForm));
+            });
+        }
+        
+        // Handle notifications settings form submission
+        const notificationsSettingsForm = document.getElementById('notificationsSettingsForm');
+        if (notificationsSettingsForm) {
+            notificationsSettingsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveSettings('notifications', new FormData(notificationsSettingsForm));
+            });
+        }
+        
+        // Handle log filtering
+        const logFilter = document.getElementById('logFilter');
+        if (logFilter) {
+            logFilter.addEventListener('change', function() {
+                filterLogs(this.value);
+            });
+        }
+        
+        // Handle refresh logs button
+        const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+        if (refreshLogsBtn) {
+            refreshLogsBtn.addEventListener('click', function() {
+                refreshLogs();
+            });
+        }
+        
+        // Handle download logs button
+        const downloadLogsBtn = document.getElementById('downloadLogsBtn');
+        if (downloadLogsBtn) {
+            downloadLogsBtn.addEventListener('click', function() {
+                downloadLogs();
+            });
+        }
+        
+        // Handle clear logs button
+        const clearLogsBtn = document.getElementById('clearLogsBtn');
+        if (clearLogsBtn) {
+            clearLogsBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all logs?')) {
+                    clearLogs();
+                }
+            });
+        }
+        
+        // Handle purge data button
+        const purgeDataBtn = document.getElementById('purgeDataBtn');
+        if (purgeDataBtn) {
+            purgeDataBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to purge old data? This cannot be undone.')) {
+                    purgeData();
+                }
+            });
+        }
+        
+        // Handle export data button
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        if (exportDataBtn) {
+            exportDataBtn.addEventListener('click', function() {
+                exportData();
+            });
+        }
+        
+        // Handle update system button
+        const updateSystemBtn = document.getElementById('updateSystemBtn');
+        if (updateSystemBtn) {
+            updateSystemBtn.addEventListener('click', function() {
+                checkForUpdates();
+            });
+        }
+        
+        // Handle reset system button
+        const resetSystemBtn = document.getElementById('resetSystemBtn');
+        if (resetSystemBtn) {
+            resetSystemBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to reset the system? All settings will be reset to default values.')) {
+                    resetSystem();
+                }
+            });
+        }
+        
+        // Handle retrain model button
+        const retrainModelBtn = document.getElementById('retrainModelBtn');
+        if (retrainModelBtn) {
+            retrainModelBtn.addEventListener('click', function() {
+                retrainModel();
+            });
+        }
+        
+        // Select the active tab based on URL hash
+        const hash = window.location.hash;
+        if (hash) {
+            const tabId = hash.substring(1) + '-tab';
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                const bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+    });
+    
+    function saveSettings(type, formData) {
+        // Convert FormData to JSON
+        const settings = {};
+        for (let [key, value] of formData.entries()) {
+            if (key.endsWith('[]')) {
+                // Handle array values
+                const arrayKey = key.substring(0, key.length - 2);
+                if (!settings[arrayKey]) {
+                    settings[arrayKey] = [];
+                }
+                settings[arrayKey].push(value);
+            } else {
+                // Handle checkboxes (they are only included if checked)
+                if (key.startsWith('enable_') || key === 'auto_reset' || key === 'play_sounds') {
+                    settings[key] = true;
+                } else {
+                    settings[key] = value;
+                }
+            }
+        }
+        
+        // Check for unchecked checkboxes (not included in FormData)
+        const checkboxes = document.querySelectorAll(`#${type}SettingsForm input[type="checkbox"]`);
+        checkboxes.forEach(checkbox => {
+            if (!formData.has(checkbox.name) && !checkbox.name.endsWith('[]')) {
+                settings[checkbox.name] = false;
+            }
+        });
+        
+        // Save settings to server
+        fetch('/api/system/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Settings saved successfully.');
+            } else {
+                alert('Error saving settings: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving settings:', error);
+            alert('An error occurred while saving settings.');
+        });
+    }
+    
+    function filterLogs(level) {
+        const rows = document.querySelectorAll('.log-row');
+        
+        rows.forEach(row => {
+            switch (level) {
+                case 'error':
+                    row.style.display = row.classList.contains('error') ? '' : 'none';
+                    break;
+                case 'warning':
+                    row.style.display = (row.classList.contains('error') || row.classList.contains('warning')) ? '' : 'none';
+                    break;
+                case 'info':
+                    row.style.display = row.classList.contains('debug') ? 'none' : '';
+                    break;
+                default:
+                    row.style.display = '';
+            }
+        });
+    }
+    
+    function refreshLogs() {
+        fetch('/api/system/logs')
+        .then(response => response.json())
+        .then(data => {
+            if (data.logs) {
+                updateLogsTable(data.logs);
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing logs:', error);
+        });
+    }
+    
+    function updateLogsTable(logs) {
+        const logsTable = document.getElementById('logsTable');
+        if (!logsTable) return;
+        
+        logsTable.innerHTML = '';
+        
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            row.className = `log-row ${log.level.toLowerCase()}`;
+            
+            const levelClass = 
+                log.level === 'ERROR' ? 'danger' : 
+                log.level === 'WARNING' ? 'warning' : 
+                log.level === 'INFO' ? 'info' : 'secondary';
+            
+            row.innerHTML = `
+                <td>${log.timestamp}</td>
+                <td><span class="badge bg-${levelClass}">${log.level}</span></td>
+                <td>${log.source}</td>
+                <td>${log.message}</td>
+            `;
+            
+            logsTable.appendChild(row);
+        });
+        
+        // Re-apply filter
+        const logFilter = document.getElementById('logFilter');
+        if (logFilter) {
+            filterLogs(logFilter.value);
+        }
+    }
+    
+    function downloadLogs() {
+        window.location.href = '/api/system/logs/download';
+    }
+    
+    function clearLogs() {
+        fetch('/api/system/logs/clear', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const logsTable = document.getElementById('logsTable');
+                if (logsTable) {
+                    logsTable.innerHTML = '';
+                }
+                alert('Logs cleared successfully.');
+            } else {
+                alert('Error clearing logs: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing logs:', error);
+            alert('An error occurred while clearing logs.');
+        });
+    }
+    
+    function purgeData() {
+        const dataRetention = document.getElementById('dataRetention').value;
+        
+        fetch('/api/system/purge', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ days: dataRetention })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Successfully purged data older than ${dataRetention} days.`);
+            } else {
+                alert('Error purging data: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error purging data:', error);
+            alert('An error occurred while purging data.');
+        });
+    }
+    
+    function exportData() {
+        window.location.href = '/api/system/export';
+    }
+    
+    function checkForUpdates() {
+        fetch('/api/system/update/check')
+        .then(response => response.json())
+        .then(data => {
+            if (data.updates_available) {
+                if (confirm(`Updates available (version ${data.latest_version}). Do you want to install them now?`)) {
+                    installUpdates();
+                }
+            } else {
+                alert('No updates available. Your system is up to date.');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking for updates:', error);
+            alert('An error occurred while checking for updates.');
+        });
+    }
+    
+    function installUpdates() {
+        fetch('/api/system/update/install', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Updates installed successfully. The system will now restart.');
+                // In a real app, we would handle the restart here
+            } else {
+                alert('Error installing updates: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error installing updates:', error);
+            alert('An error occurred while installing updates.');
+        });
+    }
+    
+    function resetSystem() {
+        fetch('/api/system/reset', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('System reset successfully. The page will now reload.');
+                window.location.reload();
+            } else {
+                alert('Error resetting system: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error resetting system:', error);
+            alert('An error occurred while resetting the system.');
+        });
+    }
+    
+    function retrainModel() {
+        fetch('/api/model/retrain', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Model retraining started. This may take several minutes.');
+            } else {
+                alert('Error starting model retraining: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error retraining model:', error);
+            alert('An error occurred while retraining the model.');
+        });
+    }
+</script>
+{% endblock %} 

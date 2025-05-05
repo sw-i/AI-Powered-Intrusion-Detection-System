@@ -1,0 +1,840 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | AI-Powered IDS{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Controls & Status -->
+    <div class="row g-2 align-items-center mb-2">
+        <div class="col-lg-9 col-md-8 col-12">
+            <div class="monitoring-controls gap-2">
+                <button id="startMonitoringBtn" class="btn btn-primary btn-monitor" {% if monitoring_active %}disabled{% endif %}>
+                    <i class="bi bi-play-fill"></i> Start Monitoring
+                </button>
+                <button id="stopMonitoringBtn" class="btn btn-danger btn-monitor" {% if not monitoring_active %}disabled{% endif %}>
+                    <i class="bi bi-stop-fill"></i> Stop Monitoring
+                </button>
+                <button id="clearDataBtn" class="btn btn-warning btn-monitor">
+                    <i class="bi bi-trash"></i> Clear Data
+                </button>
+                <button id="resetSystemBtn" class="btn btn-secondary btn-monitor">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset System
+                </button>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-12 text-end">
+            <div class="status-indicator d-inline-flex align-items-center {% if monitoring_active %}active{% endif %}">
+                <span class="pulse"></span>
+                <span id="statusText">{% if monitoring_active %}Monitoring Active{% else %}Monitoring Inactive{% endif %}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attack Simulation Controls -->
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-lightning-charge"></i> Attack Simulation
+                </div>
+                <div class="card-body p-2">
+                    <div class="row g-2">
+                        <div class="col-lg-4 col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">Target IP</span>
+                                <input type="text" id="simulationTargetIp" class="form-control" value="10.0.0.1" placeholder="Target IP">
+                            </div>
+                        </div>
+                        <div class="col-lg-8 col-md-6">
+                            <div class="btn-group">
+                                <button id="simulateDoSBtn" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-hdd-network"></i> Simulate DoS Attack
+                                </button>
+                                <button id="simulatePortScanBtn" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-grid"></i> Simulate Port Scan
+                                </button>
+                                <button id="simulateBruteForceBtn" class="btn btn-sm btn-dark">
+                                    <i class="bi bi-key"></i> Simulate Brute Force
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="row g-2 mb-2">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card primary">
+                <div class="card-body">
+                    <i class="bi bi-shield-check stat-icon"></i>
+                    <h2 id="totalPackets">{{ stats.total_packets }}</h2>
+                    <h5>TOTAL PACKETS</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card success">
+                <div class="card-body">
+                    <i class="bi bi-check-circle stat-icon"></i>
+                    <h2 id="safePackets">{{ stats.safe_packets }}</h2>
+                    <h5>SAFE PACKETS</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card danger">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle stat-icon"></i>
+                    <h2 id="threatPackets">{{ stats.threat_packets }}</h2>
+                    <h5>THREAT PACKETS</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card warning">
+                <div class="card-body">
+                    <i class="bi bi-question-circle stat-icon"></i>
+                    <h2 id="suspiciousPackets">{{ stats.suspicious_packets }}</h2>
+                    <h5>SUSPICIOUS PACKETS</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row 1 -->
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-graph-up"></i> Traffic Overview
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-pie-chart"></i> Attack Types
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="attackTypesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row 2 -->
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-globe"></i> Attack Sources
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="sourcesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-clock-history"></i> Attack Timeline
+                </div>
+                <div class="card-body">
+                    <div class="chart-parent">
+                        <canvas id="attackTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Packet Details Row -->
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-diagram-3"></i> Recent Packet Details
+                    </div>
+                    <div>
+                        <select id="packetFilterSelect" class="form-select form-select-sm">
+                            <option value="all">All Packets</option>
+                            <option value="safe">Safe Only</option>
+                            <option value="threat">Threats Only</option>
+                            <option value="suspicious">Suspicious Only</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="sticky-top bg-light">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Source IP</th>
+                                    <th>Destination IP</th>
+                                    <th>Protocol</th>
+                                    <th>Size (bytes)</th>
+                                    <th>Port</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packetDetailsTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">No packet data to display</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts Row -->
+    <div class="row g-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-bell"></i> Recent Alerts
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm mb-0">
+                            <thead class="sticky-top bg-light">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                    <th>Source IP</th>
+                                    <th>Destination IP</th>
+                                    <th>Protocol</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alertsTable">
+                                {% for alert in stats.alerts %}
+                                <tr>
+                                    <td>{{ alert.timestamp }}</td>
+                                    <td>{{ alert.type }}</td>
+                                    <td>{{ alert.source_ip }}</td>
+                                    <td>{{ alert.destination_ip }}</td>
+                                    <td>{{ alert.protocol }}</td>
+                                    <td><span class="badge {% if alert.type|lower in ['dos', 'ddos'] %}bg-danger{% elif alert.type|lower in ['port_scan', 'brute_force'] %}bg-warning{% else %}bg-secondary{% endif %}">{{ alert.status }}</span></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No alerts to display</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let monitoringActive = {{ 'true' if monitoring_active else 'false' }};
+    let refreshInterval;
+    const refreshRate = 2000; // 2 seconds
+    let trafficChart, attackTypesChart, sourcesChart, attackTimelineChart;
+    
+    // DOM elements
+    const startMonitoringBtn = document.getElementById('startMonitoringBtn');
+    const stopMonitoringBtn = document.getElementById('stopMonitoringBtn');
+    const clearDataBtn = document.getElementById('clearDataBtn');
+    const resetSystemBtn = document.getElementById('resetSystemBtn');
+    const statusIndicator = document.querySelector('.status-indicator');
+    const statusText = document.getElementById('statusText');
+    const totalPackets = document.getElementById('totalPackets');
+    const safePackets = document.getElementById('safePackets');
+    const threatPackets = document.getElementById('threatPackets');
+    const suspiciousPackets = document.getElementById('suspiciousPackets');
+    const alertsTable = document.getElementById('alertsTable');
+    
+    // Initialize charts
+    document.addEventListener('DOMContentLoaded', function() {
+        initCharts();
+        
+        // Button event handlers
+        startMonitoringBtn.addEventListener('click', startMonitoring);
+        stopMonitoringBtn.addEventListener('click', stopMonitoring);
+        clearDataBtn.addEventListener('click', clearData);
+        resetSystemBtn.addEventListener('click', resetSystem);
+        
+        // Start refresh if monitoring is active
+        if (monitoringActive) {
+            startRefresh();
+        }
+        
+        // Handle window resize to resize charts correctly
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                resizeCharts();
+            }, 250);
+        });
+        
+        // Attack simulation button handlers
+        document.getElementById('simulateDoSBtn').addEventListener('click', simulateDoSAttack);
+        document.getElementById('simulatePortScanBtn').addEventListener('click', simulatePortScan);
+        document.getElementById('simulateBruteForceBtn').addEventListener('click', simulateBruteForce);
+        
+        // Packet filter handler
+        document.getElementById('packetFilterSelect').addEventListener('change', filterPackets);
+        
+        // Initialize packet details if monitoring is active
+        if (monitoringActive) {
+            updatePacketDetails();
+        }
+    });
+    
+    function initCharts() {
+        // Traffic Chart
+        const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+        trafficChart = new Chart(trafficCtx, {
+            type: 'line',
+            data: {
+                labels: {{ stats.traffic_labels|tojson }},
+                datasets: [{
+                    label: 'Traffic',
+                    data: {{ stats.traffic_data|tojson }},
+                    borderColor: '#4361ee',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Attack Types Chart
+        const attackTypesCtx = document.getElementById('attackTypesChart').getContext('2d');
+        attackTypesChart = new Chart(attackTypesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys({{ stats.attack_types|tojson }}),
+                datasets: [{
+                    data: Object.values({{ stats.attack_types|tojson }}),
+                    backgroundColor: [
+                        '#f64e60',
+                        '#ff9800',
+                        '#3ac47d',
+                        '#4361ee'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Sources Chart
+        const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
+        sourcesChart = new Chart(sourcesCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys({{ stats.sources|tojson }}),
+                datasets: [{
+                    label: 'Attack Sources',
+                    data: Object.values({{ stats.sources|tojson }}),
+                    backgroundColor: '#4361ee'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Attack Timeline Chart
+        const timelineCtx = document.getElementById('attackTimelineChart').getContext('2d');
+        attackTimelineChart = new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: {{ stats.timeline_labels|tojson }},
+                datasets: [{
+                    label: 'Attacks',
+                    data: {{ stats.timeline_data|tojson }},
+                    borderColor: '#f64e60',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(246, 78, 96, 0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function resizeCharts() {
+        if (trafficChart) trafficChart.resize();
+        if (attackTypesChart) attackTypesChart.resize();
+        if (sourcesChart) sourcesChart.resize();
+        if (attackTimelineChart) attackTimelineChart.resize();
+    }
+    
+    function startMonitoring() {
+        fetch('/api/start_monitoring', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                monitoringActive = true;
+                updateStatus(true);
+                startMonitoringBtn.disabled = true;
+                stopMonitoringBtn.disabled = false;
+                startRefresh();
+            }
+        })
+        .catch(error => console.error('Error starting monitoring:', error));
+    }
+    
+    function stopMonitoring() {
+        fetch('/api/stop_monitoring', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                monitoringActive = false;
+                updateStatus(false);
+                startMonitoringBtn.disabled = false;
+                stopMonitoringBtn.disabled = true;
+                stopRefresh();
+            }
+        })
+        .catch(error => console.error('Error stopping monitoring:', error));
+    }
+    
+    function clearData() {
+        if (confirm('Are you sure you want to clear all data?')) {
+            fetch('/api/clear_data', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateDashboard();
+                }
+            })
+            .catch(error => console.error('Error clearing data:', error));
+        }
+    }
+    
+    function resetSystem() {
+        if (confirm('Are you sure you want to reset the system? This will stop monitoring and clear all data.')) {
+            fetch('/api/reset_system', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    monitoringActive = false;
+                    updateStatus(false);
+                    startMonitoringBtn.disabled = false;
+                    stopMonitoringBtn.disabled = true;
+                    stopRefresh();
+                    updateDashboard();
+                }
+            })
+            .catch(error => console.error('Error resetting system:', error));
+        }
+    }
+    
+    function updateStatus(active) {
+        if (active) {
+            statusIndicator.classList.add('active');
+            statusText.textContent = 'Monitoring Active';
+        } else {
+            statusIndicator.classList.remove('active');
+            statusText.textContent = 'Monitoring Inactive';
+        }
+    }
+    
+    function startRefresh() {
+        if (!refreshInterval) {
+            refreshInterval = setInterval(updateDashboard, refreshRate);
+        }
+    }
+    
+    function stopRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+            refreshInterval = null;
+        }
+    }
+    
+    function updateDashboard() {
+        fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            // Update counter stats
+            totalPackets.textContent = data.total_packets;
+            safePackets.textContent = data.safe_packets;
+            threatPackets.textContent = data.threat_packets;
+            suspiciousPackets.textContent = data.suspicious_packets;
+            
+            // Update charts
+            updateCharts(data);
+            
+            // Update alerts table
+            updateAlerts(data.alerts);
+            
+            // Update packet details table
+            if (data.packets) {
+                updatePacketDetailsTable(data.packets);
+            } else {
+                // If no packet data in response, generate some for display
+                updatePacketDetails();
+            }
+            
+            // Check if monitoring state has changed
+            if (monitoringActive !== data.monitoring_active) {
+                monitoringActive = data.monitoring_active;
+                updateStatus(monitoringActive);
+                startMonitoringBtn.disabled = monitoringActive;
+                stopMonitoringBtn.disabled = !monitoringActive;
+                
+                if (monitoringActive && !refreshInterval) {
+                    startRefresh();
+                } else if (!monitoringActive && refreshInterval) {
+                    stopRefresh();
+                }
+            }
+        })
+        .catch(error => console.error('Error updating dashboard:', error));
+    }
+    
+    function updateCharts(data) {
+        // Update Traffic Chart
+        if (data.traffic_labels && data.traffic_data) {
+            trafficChart.data.labels = data.traffic_labels;
+            trafficChart.data.datasets[0].data = data.traffic_data;
+            trafficChart.update();
+        }
+        
+        // Update Attack Types Chart
+        if (data.attack_types) {
+            attackTypesChart.data.labels = Object.keys(data.attack_types);
+            attackTypesChart.data.datasets[0].data = Object.values(data.attack_types);
+            attackTypesChart.update();
+        }
+        
+        // Update Sources Chart
+        if (data.sources) {
+            sourcesChart.data.labels = Object.keys(data.sources);
+            sourcesChart.data.datasets[0].data = Object.values(data.sources);
+            sourcesChart.update();
+        }
+        
+        // Update Attack Timeline Chart
+        if (data.timeline_labels && data.timeline_data) {
+            attackTimelineChart.data.labels = data.timeline_labels;
+            attackTimelineChart.data.datasets[0].data = data.timeline_data;
+            attackTimelineChart.update();
+        }
+    }
+    
+    function updateAlerts(alerts) {
+        if (!alerts || !alertsTable) return;
+        
+        alertsTable.innerHTML = '';
+        
+        if (alerts.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="6" class="text-center">No alerts to display</td>';
+            alertsTable.appendChild(row);
+            return;
+        }
+        
+        alerts.forEach(alert => {
+            const alertClass = getAlertClass(alert.type);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${alert.timestamp}</td>
+                <td>${alert.type}</td>
+                <td>${alert.source_ip}</td>
+                <td>${alert.destination_ip}</td>
+                <td>${alert.protocol}</td>
+                <td><span class="badge ${alertClass}">${alert.status}</span></td>
+            `;
+            alertsTable.appendChild(row);
+        });
+    }
+    
+    function getAlertClass(attackType) {
+        if (!attackType) return 'bg-secondary';
+        
+        switch(attackType.toLowerCase()) {
+            case 'dos':
+            case 'ddos':
+                return 'bg-danger';
+            case 'port_scan':
+            case 'brute_force':
+                return 'bg-warning';
+            default:
+                return 'bg-secondary';
+        }
+    }
+
+    // Attack Simulation Functions
+    function simulateDoSAttack() {
+        const targetIp = document.getElementById('simulationTargetIp').value;
+        
+        fetch('/api/simulate/dos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                target_ip: targetIp,
+                packets: 100
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('DoS attack simulation started');
+                // Update immediately to see some results
+                updateDashboard();
+            } else {
+                alert('Error starting attack simulation: ' + data.error);
+            }
+        })
+        .catch(error => console.error('Error simulating attack:', error));
+    }
+    
+    function simulatePortScan() {
+        const targetIp = document.getElementById('simulationTargetIp').value;
+        
+        fetch('/api/simulate/port_scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                target_ip: targetIp,
+                ports: 20
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Port scan simulation started');
+                // Update immediately to see some results
+                updateDashboard();
+            } else {
+                alert('Error starting port scan simulation: ' + data.error);
+            }
+        })
+        .catch(error => console.error('Error simulating port scan:', error));
+    }
+    
+    function simulateBruteForce() {
+        const targetIp = document.getElementById('simulationTargetIp').value;
+        
+        fetch('/api/simulate/brute_force', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                target_ip: targetIp,
+                attempts: 10
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Brute force attack simulation started');
+                // Update immediately to see some results
+                updateDashboard();
+            } else {
+                alert('Error starting brute force simulation: ' + data.error);
+            }
+        })
+        .catch(error => console.error('Error simulating brute force:', error));
+    }
+    
+    function updatePacketDetails() {
+        // Generate synthetic packet data for display purposes
+        const packetTypes = ['TCP', 'UDP', 'ICMP', 'HTTP', 'HTTPS', 'DNS', 'SMTP'];
+        const statuses = ['Safe', 'Threat', 'Suspicious'];
+        const weightedStatuses = ['Safe', 'Safe', 'Safe', 'Safe', 'Threat', 'Suspicious']; // More safe packets
+        const packets = [];
+        
+        // Generate 20 random packets
+        for (let i = 0; i < 20; i++) {
+            const now = new Date();
+            const timestamp = now.toTimeString().split(' ')[0];
+            const sourceIp = `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+            const destIp = `10.0.0.${Math.floor(Math.random() * 255)}`;
+            const protocol = packetTypes[Math.floor(Math.random() * packetTypes.length)];
+            const size = Math.floor(Math.random() * 1500) + 64; // Typical packet sizes
+            const port = Math.floor(Math.random() * 65535);
+            const status = weightedStatuses[Math.floor(Math.random() * weightedStatuses.length)];
+            
+            packets.push({
+                timestamp,
+                sourceIp,
+                destIp,
+                protocol,
+                size,
+                port,
+                status
+            });
+        }
+        
+        updatePacketDetailsTable(packets);
+    }
+    
+    function updatePacketDetailsTable(packets) {
+        const packetDetailsTable = document.getElementById('packetDetailsTable');
+        if (!packetDetailsTable) return;
+        
+        // Clear existing rows
+        packetDetailsTable.innerHTML = '';
+        
+        if (!packets || packets.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="7" class="text-center">No packet data to display</td>';
+            packetDetailsTable.appendChild(row);
+            return;
+        }
+        
+        // Add packets to table
+        packets.forEach(packet => {
+            const row = document.createElement('tr');
+            row.className = `packet-row ${packet.status.toLowerCase()}`;
+            
+            // Determine status badge class
+            let statusClass = '';
+            switch (packet.status.toLowerCase()) {
+                case 'threat':
+                    statusClass = 'bg-danger';
+                    break;
+                case 'suspicious':
+                    statusClass = 'bg-warning';
+                    break;
+                default:
+                    statusClass = 'bg-success';
+            }
+            
+            row.innerHTML = `
+                <td>${packet.timestamp}</td>
+                <td>${packet.sourceIp}</td>
+                <td>${packet.destIp}</td>
+                <td>${packet.protocol}</td>
+                <td>${packet.size}</td>
+                <td>${packet.port}</td>
+                <td><span class="badge ${statusClass}">${packet.status}</span></td>
+            `;
+            
+            packetDetailsTable.appendChild(row);
+        });
+        
+        // Apply current filter
+        filterPackets();
+    }
+    
+    function filterPackets() {
+        const filter = document.getElementById('packetFilterSelect').value;
+        const rows = document.querySelectorAll('.packet-row');
+        
+        rows.forEach(row => {
+            if (filter === 'all') {
+                row.style.display = '';
+            } else {
+                if (row.classList.contains(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+</script>
+{% endblock %} 
